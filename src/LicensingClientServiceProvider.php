@@ -18,7 +18,7 @@ class LicensingClientServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/licensing-client.php',
+            __DIR__.'/../config/licensing-client.php',
             'licensing-client'
         );
 
@@ -74,12 +74,12 @@ class LicensingClientServiceProvider extends ServiceProvider
 
     private function registerRoutes(): void
     {
-        $this->loadRoutesFrom(__DIR__ . '/../routes/licensing.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/licensing.php');
     }
 
     private function registerViews(): void
     {
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'licensing');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'licensing');
     }
 
     private function registerComponents(): void
@@ -95,11 +95,11 @@ class LicensingClientServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/licensing-client.php' => config_path('licensing-client.php'),
+                __DIR__.'/../config/licensing-client.php' => config_path('licensing-client.php'),
             ], 'licensing-client-config');
 
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/licensing-client'),
+                __DIR__.'/../resources/views' => resource_path('views/vendor/licensing-client'),
             ], 'licensing-client-views');
         }
     }

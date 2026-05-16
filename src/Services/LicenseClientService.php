@@ -4,15 +4,12 @@ namespace DevWebs01\LicensingClient\Services;
 
 use DevWebs01\LicensingClient\Enums\LicenseStatus;
 use DevWebs01\LicensingClient\Exceptions\ClockDriftDetectedException;
-use DevWebs01\LicensingClient\Exceptions\LicenseExpiredException;
 use DevWebs01\LicensingClient\Exceptions\LicenseNotActivatedException;
-use DevWebs01\LicensingClient\Exceptions\LicenseSuspendedException;
 use DevWebs01\LicensingClient\Exceptions\ServerUnreachableException;
 use DevWebs01\LicensingClient\ValueObjects\ActivationResult;
 use DevWebs01\LicensingClient\ValueObjects\LicenseInfo;
 use DevWebs01\LicensingClient\ValueObjects\ValidationResult;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
 class LicenseClientService
@@ -25,8 +22,7 @@ class LicenseClientService
         private readonly string $appName,
         private readonly int $timeout,
         private readonly int $graceDays,
-    ) {
-    }
+    ) {}
 
     public function activate(string $licenseKey): ActivationResult
     {

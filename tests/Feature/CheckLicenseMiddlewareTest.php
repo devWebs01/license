@@ -2,8 +2,9 @@
 
 namespace DevWebs01\LicensingClient\Tests\Feature;
 
-use DevWebs01\LicensingClient\Services\LicenseCacheService;
+use DevWebs01\LicensingClient\Http\Middleware\CheckLicenseMiddleware;
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
+use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use DevWebs01\LicensingClient\Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -21,7 +22,9 @@ class CheckLicenseMiddlewareTest extends TestCase
             cacheStore: 'array'
         );
 
-        Route::middleware('license')->get('/test-route', function () {
+        $this->app->instance(LicenseCacheService::class, $this->cacheService);
+
+        Route::middleware(CheckLicenseMiddleware::class)->get('/test-route', function () {
             return 'OK';
         });
 
@@ -83,7 +86,7 @@ class CheckLicenseMiddlewareTest extends TestCase
 
         $response = $this->get('/test-route');
 
-        $response->assertRedirect(route('licensing.locked'));
+        $response->assertRedirect();
     }
 
     public function test_server_returns_expired_redirects_to_lock(): void

@@ -15,6 +15,5 @@ readonly class LicenseInfo
         public ?string $product = null,
         public ?string $cachedAt = null,
         public bool $requiresOnlineRefresh = false,
-    ) {
-    }
+    ) {}
 }

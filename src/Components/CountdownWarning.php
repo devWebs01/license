@@ -9,7 +9,9 @@ use Illuminate\View\Component;
 class CountdownWarning extends Component
 {
     public int $daysRemaining;
+
     public ?string $offlineUntil;
+
     public bool $shouldShow = false;
 
     public function __construct()

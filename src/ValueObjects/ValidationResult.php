@@ -16,8 +16,7 @@ readonly class ValidationResult
         public int $devicesCount = 0,
         public ?string $message = null,
         public array $features = [],
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

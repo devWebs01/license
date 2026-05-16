@@ -1,6 +1,7 @@
 <?php
 
 use DevWebs01\LicensingClient\Facades\LicenseClient;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 $prefix = config('licensing-client.route_prefix', 'licensing');
@@ -10,7 +11,7 @@ Route::prefix($prefix)->group(function () {
         return view('licensing::activate');
     })->name('licensing.activate');
 
-    Route::post('/activate', function (\Illuminate\Http\Request $request) {
+    Route::post('/activate', function (Request $request) {
         $key = $request->input('license_key');
 
         if (empty($key)) {
@@ -43,13 +44,13 @@ Route::prefix($prefix)->group(function () {
         ]);
     })->name('licensing.status');
 
-    Route::get('/locked', function (\Illuminate\Http\Request $request) {
+    Route::get('/locked', function (Request $request) {
         return view('licensing::locked', [
             'reason' => $request->query('reason', 'unknown'),
         ]);
     })->name('licensing.locked');
 
-    Route::get('/poll', function (\Illuminate\Http\Request $request) {
+    Route::get('/poll', function (Request $request) {
         $code = session('activation_code');
 
         if ($code === null) {

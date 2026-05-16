@@ -3,10 +3,20 @@
 namespace DevWebs01\LicensingClient\Tests;
 
 use DevWebs01\LicensingClient\LicensingClientServiceProvider;
+use DevWebs01\LicensingClient\Services\LicenseCacheService;
+use Illuminate\Support\Facades\Cache;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::store('array')->forget(LicenseCacheService::CACHE_KEY_TOKEN);
+        Cache::store('array')->forget(LicenseCacheService::CACHE_KEY_META);
+    }
+
     protected function getPackageProviders($app): array
     {
         return [

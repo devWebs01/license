@@ -6,17 +6,18 @@ use DevWebs01\LicensingClient\Enums\LicenseStatus;
 use DevWebs01\LicensingClient\Exceptions\LicenseNotActivatedException;
 use DevWebs01\LicensingClient\Exceptions\ServerUnreachableException;
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
-use Illuminate\Http\Client\ConnectionException;
 use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use DevWebs01\LicensingClient\Services\LicenseClientService;
 use DevWebs01\LicensingClient\Tests\TestCase;
 use DevWebs01\LicensingClient\ValueObjects\ActivationResult;
 use DevWebs01\LicensingClient\ValueObjects\ValidationResult;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class LicenseClientServiceTest extends TestCase
 {
     private LicenseClientService $service;
+
     private LicenseCacheService $cacheService;
 
     protected function setUp(): void

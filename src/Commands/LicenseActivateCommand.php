@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class LicenseActivateCommand extends Command
 {
     protected $signature = 'license:activate {key : License key (format: XXXX-XXXX-XXXX-XXXX)}';
+
     protected $description = 'Aktivasi license key untuk aplikasi ini';
 
     public function __construct(

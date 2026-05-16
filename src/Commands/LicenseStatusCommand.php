@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 class LicenseStatusCommand extends Command
 {
     protected $signature = 'license:status';
+
     protected $description = 'Tampilkan status lisensi saat ini';
 
     public function __construct(

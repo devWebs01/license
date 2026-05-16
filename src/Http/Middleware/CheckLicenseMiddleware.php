@@ -15,8 +15,7 @@ class CheckLicenseMiddleware
 {
     public function __construct(
         private readonly LicenseClientService $licenseService,
-    ) {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {

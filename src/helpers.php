@@ -1,6 +1,7 @@
 <?php
 
 use DevWebs01\LicensingClient\Facades\LicenseClient;
+use DevWebs01\LicensingClient\ValueObjects\LicenseInfo;
 
 if (! function_exists('license_is_valid')) {
     function license_is_valid(): bool
@@ -17,7 +18,7 @@ if (! function_exists('license_has_feature')) {
 }
 
 if (! function_exists('license_info')) {
-    function license_info(): \DevWebs01\LicensingClient\ValueObjects\LicenseInfo
+    function license_info(): LicenseInfo
     {
         return LicenseClient::info();
     }

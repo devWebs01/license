@@ -10,8 +10,11 @@ use Illuminate\View\Component;
 class LockedScreen extends Component
 {
     public LicenseStatus $status;
+
     public string $label;
+
     public string $adminContact;
+
     public string $reason;
 
     public function __construct()

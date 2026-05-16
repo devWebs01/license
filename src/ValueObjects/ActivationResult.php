@@ -10,8 +10,7 @@ readonly class ActivationResult
         public ?string $activationCode = null,
         public ?string $offlineUntil = null,
         public ?string $message = null,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {

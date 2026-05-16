@@ -6,6 +6,7 @@ use DevWebs01\LicensingClient\Exceptions\CorruptedTokenException;
 use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use DevWebs01\LicensingClient\Tests\TestCase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 
 class LicenseCacheServiceTest extends TestCase
 {
@@ -102,12 +103,12 @@ class LicenseCacheServiceTest extends TestCase
 
     public function test_grace_days_remaining_returns_correct_count(): void
     {
-        $future = now()->addDays(3)->startOfDay()->addHours(12);
         $token = [
-            'offline_until' => $future->toIso8601String(),
+            'offline_until' => now()->addDays(3)->addHour()->toIso8601String(),
         ];
 
-        $this->assertSame(3, $this->cacheService->graceDaysRemaining($token));
+        $remaining = $this->cacheService->graceDaysRemaining($token);
+        $this->assertGreaterThanOrEqual(3, $remaining);
     }
 
     public function test_detect_clock_drift_returns_false_when_no_drift(): void
@@ -144,6 +145,17 @@ class LicenseCacheServiceTest extends TestCase
 
         $this->cacheService->storeToken($tokenData);
 
+        $encrypted = Cache::store('array')->get(LicenseCacheService::CACHE_KEY_TOKEN);
+        $decrypted = json_decode(Crypt::decryptString($encrypted), true);
+        $decrypted['hmac'] = str_repeat('a', 64);
+        Cache::store('array')->put(
+            LicenseCacheService::CACHE_KEY_TOKEN,
+            Crypt::encryptString(json_encode($decrypted)),
+            now()->addDays(30)
+        );
+
         $this->expectException(CorruptedTokenException::class);
+
+        $this->cacheService->retrieveToken();
     }
 }

@@ -49,6 +49,7 @@ class FingerprintCollectorTest extends TestCase
         $this->assertArrayHasKey('app_path', $data);
         $this->assertArrayHasKey('database', $data);
         $this->assertArrayHasKey('php_version', $data);
+        $this->assertArrayHasKey('app_key_hash', $data);
     }
 
     public function test_collect_data_contains_php_version(): void

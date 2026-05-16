@@ -10,7 +10,9 @@ use Illuminate\View\Component;
 class StatusBadge extends Component
 {
     public LicenseStatus $status;
+
     public string $label;
+
     public bool $isValid;
 
     public function __construct()

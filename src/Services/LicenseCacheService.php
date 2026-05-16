@@ -2,7 +2,6 @@
 
 namespace DevWebs01\LicensingClient\Services;
 
-use DevWebs01\LicensingClient\Exceptions\ClockDriftDetectedException;
 use DevWebs01\LicensingClient\Exceptions\CorruptedTokenException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -10,15 +9,17 @@ use Illuminate\Support\Facades\Crypt;
 class LicenseCacheService
 {
     const CACHE_KEY_TOKEN = 'licensing:token';
+
     const CACHE_KEY_META = 'licensing:meta';
+
     const CACHE_TTL = 3600;
+
     const TOKEN_VERSION = 1;
 
     public function __construct(
         private readonly int $graceDays,
         private readonly ?string $cacheStore = null,
-    ) {
-    }
+    ) {}
 
     public function storeToken(array $tokenData): void
     {
@@ -110,7 +111,10 @@ class LicenseCacheService
         }
 
         try {
-            return max(0, (int) now()->startOfDay()->diffInDays(now()->parse($offlineUntil)->startOfDay()));
+            $target = now()->parse($offlineUntil);
+            $diff = (int) ceil(now()->diffInDays($target, true));
+
+            return max(0, $diff);
         } catch (\Throwable) {
             return 0;
         }
@@ -143,8 +147,8 @@ class LicenseCacheService
     private function computeHmac(array $tokenData): string
     {
         $payload = ($tokenData['license_key'] ?? '')
-            . ($tokenData['fingerprint'] ?? '')
-            . ($tokenData['offline_until'] ?? '');
+            .($tokenData['fingerprint'] ?? '')
+            .($tokenData['offline_until'] ?? '');
 
         return hash_hmac('sha256', $payload, $this->getHmacSecret());
     }
@@ -158,8 +162,8 @@ class LicenseCacheService
         }
 
         $payload = ($token['license_key'] ?? '')
-            . ($token['fingerprint'] ?? '')
-            . ($token['offline_until'] ?? '');
+            .($token['fingerprint'] ?? '')
+            .($token['offline_until'] ?? '');
 
         $computedHmac = hash_hmac('sha256', $payload, $this->getHmacSecret());
 
