@@ -8,10 +8,6 @@
         Hubungi admin: <strong>{{ $adminContact }}</strong>
     </p>
     <div style="display:flex;gap:0.75rem;justify-content:center;">
-        <form method="POST" action="{{ route('licensing.retry') }}" style="display:inline;">
-            @csrf
-            <button type="submit" style="padding:0.5rem 1rem;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Coba Validasi Ulang</button>
-        </form>
-        <a href="{{ route('licensing.activate') }}" style="padding:0.5rem 1rem;background:#6b7280;color:white;border-radius:6px;text-decoration:none;font-weight:600;">Aktivasi Ulang</a>
+        <a href="{{ route('licensing.activate') }}" style="padding:0.5rem 1rem;background:#3b82f6;color:white;border-radius:6px;text-decoration:none;font-weight:600;">Aktivasi Ulang</a>
     </div>
 </div>

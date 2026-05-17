@@ -1,11 +1,7 @@
 <?php
 
 return [
-    'server_url' => env('LICENSING_SERVER_URL'),
-
-    'api_key' => env('LICENSING_API_KEY'),
-
-    'api_secret' => env('LICENSING_API_SECRET'),
+    'github_raw_base' => env('LICENSING_GITHUB_RAW'),
 
     'license_key' => env('LICENSING_KEY'),
 
@@ -20,7 +16,7 @@ return [
 
     'grace_days' => env('LICENSING_GRACE_DAYS', 7),
 
-    'timeout' => env('LICENSING_TIMEOUT', 10),
+    'sync_interval_hours' => env('LICENSING_SYNC_INTERVAL', 12),
 
     'route_prefix' => 'licensing',
 

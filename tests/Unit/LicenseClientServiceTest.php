@@ -3,14 +3,12 @@
 namespace DevWebs01\LicensingClient\Tests\Unit;
 
 use DevWebs01\LicensingClient\Enums\LicenseStatus;
-use DevWebs01\LicensingClient\Exceptions\ServerUnreachableException;
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
 use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use DevWebs01\LicensingClient\Services\LicenseClientService;
 use DevWebs01\LicensingClient\Tests\TestCase;
 use DevWebs01\LicensingClient\ValueObjects\ActivationResult;
 use DevWebs01\LicensingClient\ValueObjects\ValidationResult;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class LicenseClientServiceTest extends TestCase
@@ -30,89 +28,94 @@ class LicenseClientServiceTest extends TestCase
         $this->service = new LicenseClientService(
             cache: $this->cacheService,
             fingerprint: new FingerprintCollector,
-            serverUrl: 'https://monitor.test',
-            apiKey: 'test-api-key',
-            apiSecret: 'test-api-secret',
+            githubRawBase: 'https://raw.githubusercontent.com/org/repo/main',
             licenseKey: 'TEST-ABCD-EFGH-1234',
             appName: 'Test App',
-            timeout: 10,
             graceDays: 7,
         );
     }
 
-    public function test_activate_returns_success_result(): void
+    public function test_activate_returns_success_when_github_json_valid(): void
     {
         Http::fake([
-            'monitor.test/api/v1/activate' => Http::response([
-                'success' => true,
-                'message' => 'Perangkat berhasil diaktifkan',
-                'data' => [
-                    'device_id' => 1,
-                    'offline_until' => now()->addDays(7)->toIso8601String(),
-                ],
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('VALID-KEY'),
+                'status' => 'active',
+                'expires_at' => now()->addMonths(6)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
             ]),
         ]);
 
-        $result = $this->service->activate('TEST-ABCD-EFGH-1234');
+        $result = $this->service->activate('VALID-KEY');
 
         $this->assertInstanceOf(ActivationResult::class, $result);
         $this->assertTrue($result->success);
-        $this->assertFalse($result->requiresApproval);
         $this->assertNotNull($result->offlineUntil);
     }
 
-    public function test_activate_handles_approval_mode(): void
+    public function test_activate_returns_failure_when_github_json_not_found(): void
     {
         Http::fake([
-            'monitor.test/api/v1/activate' => Http::response([
-                'success' => true,
-                'message' => 'Kode aktivasi dibuat',
-                'data' => [
-                    'requires_approval' => true,
-                    'activation_code' => 'A7F3B2C1',
-                    'expires_at' => now()->addHours(24)->toIso8601String(),
-                ],
-            ]),
-        ]);
-
-        $result = $this->service->activate('TEST-ABCD-EFGH-1234');
-
-        $this->assertTrue($result->success);
-        $this->assertTrue($result->requiresApproval);
-        $this->assertSame('A7F3B2C1', $result->activationCode);
-    }
-
-    public function test_activate_handles_invalid_key(): void
-    {
-        Http::fake([
-            'monitor.test/api/v1/activate' => Http::response([
-                'success' => false,
-                'message' => 'Kunci lisensi tidak valid',
-            ], 404),
+            'raw.githubusercontent.com/*' => Http::response(null, 404),
         ]);
 
         $result = $this->service->activate('INVALID-KEY');
 
         $this->assertFalse($result->success);
-        $this->assertNotNull($result->message);
     }
 
-    public function test_sync_returns_valid(): void
+    public function test_activate_returns_failure_when_expired(): void
     {
         Http::fake([
-            'monitor.test/api/v1/validate' => Http::response([
-                'success' => true,
-                'message' => 'Lisensi valid',
-                'data' => [
-                    'valid' => true,
-                    'status' => 'active',
-                    'product' => 'Test App',
-                    'expires_at' => now()->addMonth()->toDateString(),
-                    'max_devices' => 3,
-                    'devices_count' => 1,
-                    'offline_until' => now()->addDays(7)->toIso8601String(),
-                    'features' => ['pos', 'reports'],
-                ],
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('EXPIRED-KEY'),
+                'status' => 'active',
+                'expires_at' => now()->subDays(1)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+        ]);
+
+        $result = $this->service->activate('EXPIRED-KEY');
+
+        $this->assertFalse($result->success);
+    }
+
+    public function test_activate_returns_failure_when_status_not_active(): void
+    {
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('SUSPENDED-KEY'),
+                'status' => 'suspended',
+                'expires_at' => now()->addMonths(6)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+        ]);
+
+        $result = $this->service->activate('SUSPENDED-KEY');
+
+        $this->assertFalse($result->success);
+    }
+
+    public function test_sync_returns_valid_when_github_json_valid(): void
+    {
+        $this->cacheService->storeToken([
+            'license_key' => 'TEST-ABCD-EFGH-1234',
+            'fingerprint' => (new FingerprintCollector)->fingerprint(),
+            'status' => 'active',
+            'offline_until' => now()->addDays(7)->toIso8601String(),
+            'server_time' => now()->toIso8601String(),
+        ]);
+
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('TEST-ABCD-EFGH-1234'),
+                'status' => 'active',
+                'expires_at' => now()->addMonths(6)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
             ]),
         ]);
 
@@ -123,17 +126,50 @@ class LicenseClientServiceTest extends TestCase
         $this->assertSame(LicenseStatus::Active, $result->status);
     }
 
-    public function test_sync_throws_on_network_error(): void
+    public function test_sync_returns_invalid_when_github_json_not_found(): void
     {
-        Http::fake([
-            'monitor.test/api/v1/validate' => function () {
-                throw new ConnectionException('Connection timeout');
-            },
+        $this->cacheService->storeToken([
+            'license_key' => 'TEST-ABCD-EFGH-1234',
+            'fingerprint' => (new FingerprintCollector)->fingerprint(),
+            'status' => 'active',
+            'offline_until' => now()->addDays(7)->toIso8601String(),
+            'server_time' => now()->toIso8601String(),
         ]);
 
-        $this->expectException(ServerUnreachableException::class);
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response(null, 404),
+        ]);
 
-        $this->service->sync();
+        $result = $this->service->sync();
+
+        $this->assertFalse($result->valid);
+        $this->assertFalse($this->cacheService->hasToken());
+    }
+
+    public function test_sync_returns_invalid_when_expired(): void
+    {
+        $this->cacheService->storeToken([
+            'license_key' => 'TEST-ABCD-EFGH-1234',
+            'fingerprint' => (new FingerprintCollector)->fingerprint(),
+            'status' => 'active',
+            'offline_until' => now()->addDays(7)->toIso8601String(),
+            'server_time' => now()->toIso8601String(),
+        ]);
+
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('TEST-ABCD-EFGH-1234'),
+                'status' => 'expired',
+                'expires_at' => now()->subDays(1)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+        ]);
+
+        $result = $this->service->sync();
+
+        $this->assertFalse($result->valid);
+        $this->assertFalse($this->cacheService->hasToken());
     }
 
     public function test_status_uses_memory_cache_within_request(): void
@@ -154,36 +190,12 @@ class LicenseClientServiceTest extends TestCase
             'fingerprint' => 'abc123',
             'status' => 'active',
             'offline_until' => now()->addDays(7)->toIso8601String(),
-            'server_time' => now()->toIso8601String(),
-        ]);
-
-        Http::fake([
-            'monitor.test/api/v1/deactivate' => Http::response([
-                'success' => true,
-                'message' => 'Perangkat berhasil dideaktivasi',
-            ]),
         ]);
 
         $result = $this->service->deactivate();
 
         $this->assertTrue($result);
         $this->assertFalse($this->cacheService->hasToken());
-    }
-
-    public function test_has_feature_returns_true_for_enabled_feature(): void
-    {
-        $this->cacheService->storeToken([
-            'license_key' => 'TEST-ABCD-EFGH-1234',
-            'fingerprint' => (new FingerprintCollector)->fingerprint(),
-            'status' => 'active',
-            'offline_until' => now()->addDays(7)->toIso8601String(),
-            'server_time' => now()->toIso8601String(),
-            'features' => ['pos', 'reports'],
-        ]);
-
-        $this->assertTrue($this->service->hasFeature('pos'));
-        $this->assertTrue($this->service->hasFeature('reports'));
-        $this->assertFalse($this->service->hasFeature('inventory'));
     }
 
     public function test_status_returns_not_activated_when_no_cache(): void

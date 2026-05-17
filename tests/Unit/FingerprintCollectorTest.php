@@ -38,24 +38,4 @@ class FingerprintCollectorTest extends TestCase
             $this->collector->collect()
         );
     }
-
-    public function test_collect_data_returns_expected_keys(): void
-    {
-        $data = $this->collector->collectData();
-
-        $this->assertArrayHasKey('hostname', $data);
-        $this->assertArrayHasKey('os', $data);
-        $this->assertArrayHasKey('kernel', $data);
-        $this->assertArrayHasKey('app_path', $data);
-        $this->assertArrayHasKey('database', $data);
-        $this->assertArrayHasKey('php_version', $data);
-        $this->assertArrayHasKey('app_key_hash', $data);
-    }
-
-    public function test_collect_data_contains_php_version(): void
-    {
-        $data = $this->collector->collectData();
-
-        $this->assertSame(PHP_VERSION, $data['php_version']);
-    }
 }

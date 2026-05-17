@@ -42,11 +42,7 @@
             @endswitch
         </div>
         <div class="actions">
-            <form method="POST" action="{{ route('licensing.retry') }}">
-                @csrf
-                <button type="submit" class="btn-primary">Coba Validasi Ulang</button>
-            </form>
-            <a href="{{ route('licensing.activate') }}" class="btn-secondary">Aktivasi Ulang</a>
+            <a href="{{ route('licensing.activate') }}" class="btn-primary">Aktivasi Ulang</a>
         </div>
         <div class="admin-contact">
             Hubungi: <strong>{{ config('licensing-client.admin_contact', 'admin@company.com') }}</strong>

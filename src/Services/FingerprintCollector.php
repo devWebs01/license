@@ -37,22 +37,6 @@ final class FingerprintCollector
         return $this->collect();
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function collectData(): array
-    {
-        return [
-            'hostname' => php_uname('n'),
-            'os' => php_uname('s'),
-            'kernel' => php_uname('r'),
-            'app_path' => $this->getAppPath(),
-            'database' => $this->getDatabaseName(),
-            'php_version' => PHP_VERSION,
-            'app_key_hash' => $this->getAppKeyHash(),
-        ];
-    }
-
     private function getAppPath(): string
     {
         $path = defined('base_path') ? base_path() : ($_SERVER['DOCUMENT_ROOT'] ?? __DIR__);

@@ -10,10 +10,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool isValid()
  * @method static LicenseInfo info()
  * @method static ActivationResult activate(string $key)
- * @method static bool verifyActivation(string $code)
  * @method static bool refresh()
  * @method static bool deactivate()
- * @method static bool hasFeature(string $feature)
  */
 final class LicenseClient extends Facade
 {

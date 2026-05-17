@@ -3,14 +3,11 @@
 namespace DevWebs01\LicensingClient\Services;
 
 use DevWebs01\LicensingClient\Enums\LicenseStatus;
-use DevWebs01\LicensingClient\Exceptions\ServerUnreachableException;
 use DevWebs01\LicensingClient\ValueObjects\ActivationResult;
 use DevWebs01\LicensingClient\ValueObjects\LicenseInfo;
 use DevWebs01\LicensingClient\ValueObjects\ValidationResult;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 final class LicenseClientService
 {
@@ -19,148 +16,91 @@ final class LicenseClientService
     public function __construct(
         private readonly LicenseCacheService $cache,
         private readonly FingerprintCollector $fingerprint,
-        private readonly string $serverUrl,
-        private readonly string $apiKey,
-        private readonly string $apiSecret,
+        private readonly string $githubRawBase,
         private readonly string $licenseKey,
         private readonly string $appName,
-        private readonly int $timeout,
         private readonly int $graceDays,
     ) {}
 
     public function activate(string $licenseKey): ActivationResult
     {
-        $fingerprint = $this->fingerprint->fingerprint();
-        $deviceData = $this->fingerprint->collectData();
+        $data = $this->fetchFromGithub($licenseKey);
 
-        try {
-            $response = $this->signedPost('/api/v1/activate', [
-                'license_key' => $licenseKey,
-                'device' => [
-                    'fingerprint' => $fingerprint,
-                    'name' => $deviceData['hostname'],
-                    'platform' => $deviceData['os'],
-                    'platform_version' => $deviceData['kernel'],
-                    'app_version' => config('app.version', '1.0.0'),
-                ],
-            ]);
-
-            if ($response->status() === 401) {
-                return new ActivationResult(
-                    success: false,
-                    message: 'Kredensial API tidak valid. Periksa LICENSING_API_KEY dan LICENSING_API_SECRET.',
-                );
-            }
-
-            if ($response->failed()) {
-                return new ActivationResult(
-                    success: false,
-                    message: $response->json('message', 'Gagal aktivasi'),
-                );
-            }
-
-            $result = ActivationResult::fromArray($response->json());
-            $serverTime = $response->header('Date');
-
-            if ($result->success && ! $result->requiresApproval) {
-                $this->storeLicenseData($licenseKey, $fingerprint, $result->offlineUntil, LicenseStatus::Active->value, [], null, $serverTime);
-            }
-
-            return $result;
-        } catch (ConnectionException) {
+        if ($data === null) {
             return new ActivationResult(
                 success: false,
-                message: 'Server lisensi tidak reachable',
+                message: 'Lisensi tidak ditemukan. Periksa license key Anda.',
             );
         }
-    }
 
-    public function verifyActivation(string $code): bool
-    {
-        $fingerprint = $this->fingerprint->fingerprint();
-        $licenseKey = $this->resolveLicenseKey();
+        $status = $data['status'] ?? 'unknown';
 
-        try {
-            $response = $this->signedGet("/api/v1/verify/{$licenseKey}/{$fingerprint}", [
-                'code' => $code,
-            ]);
-
-            if ($response->failed()) {
-                return false;
-            }
-
-            $data = $response->json('data', []);
-            $serverTime = $response->header('Date');
-
-            if ($data['valid'] ?? false) {
-                $this->storeLicenseData($licenseKey, $fingerprint, $data['offline_until'] ?? null, LicenseStatus::Active->value, [], null, $serverTime);
-
-                return true;
-            }
-
-            return false;
-        } catch (ConnectionException) {
-            return false;
+        if ($status !== 'active') {
+            return new ActivationResult(
+                success: false,
+                message: 'Lisensi tidak aktif. Status: '.$status,
+            );
         }
+
+        $expiresAt = $data['expires_at'] ?? null;
+
+        if ($expiresAt && now()->greaterThan($expiresAt)) {
+            return new ActivationResult(
+                success: false,
+                message: 'Lisensi sudah kedaluwarsa pada '.$expiresAt,
+            );
+        }
+
+        $fingerprint = $this->fingerprint->fingerprint();
+        $offlineUntil = $this->calculateOfflineUntil($expiresAt);
+
+        $this->storeLicenseData($licenseKey, $fingerprint, LicenseStatus::Active->value, $offlineUntil, $expiresAt);
+
+        return new ActivationResult(
+            success: true,
+            offlineUntil: $offlineUntil,
+        );
     }
 
     public function sync(): ValidationResult
     {
-        $fingerprint = $this->fingerprint->fingerprint();
         $licenseKey = $this->resolveLicenseKey();
 
-        try {
-            $response = $this->signedPost('/api/v1/validate', [
-                'license_key' => $licenseKey,
-                'device' => [
-                    'fingerprint' => $fingerprint,
-                ],
-            ]);
+        $data = $this->fetchFromGithub($licenseKey);
 
-            if ($response->status() === 401) {
-                throw new ServerUnreachableException('Kredensial API tidak valid');
-            }
+        if ($data === null) {
+            $this->cache->clearToken();
+            $this->cache->clearStatus();
+            $this->resolvedStatus = null;
 
-            if ($response->status() === 403) {
-                $this->cache->clearToken();
-                $this->cache->clearStatus();
-                $this->resolvedStatus = null;
-
-                return new ValidationResult(
-                    valid: false,
-                    status: LicenseStatus::tryFrom($response->json('data.status', 'unknown')) ?? LicenseStatus::Unknown,
-                    message: $response->json('message', 'Lisensi tidak valid'),
-                );
-            }
-
-            if ($response->failed()) {
-                throw new ServerUnreachableException;
-            }
-
-            $result = ValidationResult::fromArray($response->json());
-            $serverTime = $response->header('Date');
-
-            if ($result->valid) {
-                $offlineUntil = $result->offlineUntil
-                    ? now()->parse($result->offlineUntil)
-                    : now()->addDays($this->graceDays);
-
-                $this->storeLicenseData(
-                    $licenseKey,
-                    $fingerprint,
-                    $offlineUntil->toIso8601String(),
-                    $result->status->value,
-                    $result->features,
-                    $result->product ?? $this->appName,
-                    $serverTime,
-                    $result->expiresAt,
-                );
-            }
-
-            return $result;
-        } catch (ConnectionException) {
-            throw new ServerUnreachableException;
+            return new ValidationResult(
+                valid: false,
+                status: LicenseStatus::Unknown,
+                message: 'Lisensi tidak ditemukan di GitHub',
+            );
         }
+
+        $status = LicenseStatus::tryFrom($data['status'] ?? '') ?? LicenseStatus::Unknown;
+        $expiresAt = $data['expires_at'] ?? null;
+        $valid = $status === LicenseStatus::Active && (! $expiresAt || now()->lessThanOrEqualTo($expiresAt));
+
+        if ($valid) {
+            $fingerprint = $this->fingerprint->fingerprint();
+            $offlineUntil = $this->calculateOfflineUntil($expiresAt);
+
+            $this->storeLicenseData($licenseKey, $fingerprint, LicenseStatus::Active->value, $offlineUntil, $expiresAt);
+        } else {
+            $this->cache->clearToken();
+            $this->cache->clearStatus();
+            $this->resolvedStatus = null;
+        }
+
+        return new ValidationResult(
+            valid: $valid,
+            status: $status,
+            offlineUntil: $valid ? $this->calculateOfflineUntil($expiresAt) : null,
+            expiresAt: $expiresAt,
+        );
     }
 
     public function status(): LicenseInfo
@@ -214,49 +154,18 @@ final class LicenseClientService
             $result = $this->sync();
 
             return $result->valid;
-        } catch (ServerUnreachableException) {
+        } catch (\Throwable) {
             return false;
         }
     }
 
     public function deactivate(): bool
     {
-        $fingerprint = $this->fingerprint->fingerprint();
-        $licenseKey = $this->resolveLicenseKey();
+        $this->cache->clearToken();
+        $this->cache->clearStatus();
+        $this->resolvedStatus = null;
 
-        try {
-            $response = $this->signedPost('/api/v1/deactivate', [
-                'license_key' => $licenseKey,
-                'device' => [
-                    'fingerprint' => $fingerprint,
-                ],
-            ]);
-
-            if ($response->successful()) {
-                $this->cache->clearToken();
-                $this->cache->clearStatus();
-                $this->resolvedStatus = null;
-
-                return true;
-            }
-
-            return false;
-        } catch (ConnectionException) {
-            return false;
-        }
-    }
-
-    public function hasFeature(string $feature): bool
-    {
-        $token = $this->cache->retrieveToken();
-
-        if ($token === null) {
-            return false;
-        }
-
-        $features = $token['features'] ?? [];
-
-        return in_array($feature, $features, true);
+        return true;
     }
 
     public function info(): LicenseInfo
@@ -286,96 +195,54 @@ final class LicenseClientService
         return $this->status()->isValid;
     }
 
-    private function signedPost(string $path, array $data): Response
+    private function fetchFromGithub(string $licenseKey): ?array
     {
-        return $this->signedRequest('POST', $path, $data);
-    }
+        $hash = sha1($licenseKey);
+        $base = rtrim($this->githubRawBase, '/');
+        $url = "{$base}/licenses/{$hash}.json";
 
-    private function signedGet(string $path, array $query = []): Response
-    {
-        return $this->signedRequest('GET', $path, $query);
-    }
+        try {
+            $response = Http::timeout(10)->get($url);
 
-    private function signedRequest(string $method, string $path, array $data = []): Response
-    {
-        $timestamp = now()->toIso8601String();
-        $nonce = Str::random(32);
-        $body = '';
-        $path = '/'.ltrim($path, '/');
-        $url = $this->serverUrl.$path;
-        $signPath = ltrim($path, '/');
+            if ($response->successful()) {
+                return $response->json();
+            }
 
-        if ($method === 'GET') {
-            $payload = "{$method}\n{$signPath}\n{$timestamp}\n{$nonce}\n";
-            $url .= '?'.http_build_query($data);
-        } else {
-            $body = json_encode($data) ?: '';
-            $payload = "{$method}\n{$signPath}\n{$timestamp}\n{$nonce}\n{$body}";
+            return null;
+        } catch (ConnectionException) {
+            return null;
         }
-
-        $signature = base64_encode(
-            hash_hmac('sha256', $payload, $this->apiSecret, true)
-        );
-
-        $request = Http::timeout($this->timeout)
-            ->withHeaders([
-                'X-API-Key' => $this->apiKey,
-                'X-Timestamp' => $timestamp,
-                'X-Signature' => $signature,
-                'X-Nonce' => $nonce,
-                'Content-Type' => 'application/json',
-            ]);
-
-        if ($method === 'GET') {
-            return $request->get($url);
-        }
-
-        return $request->post($url, $data);
     }
 
     private function storeLicenseData(
         string $licenseKey,
         string $fingerprint,
-        ?string $offlineUntil,
         string $status,
-        array $features,
-        ?string $product = null,
-        ?string $serverTime = null,
+        string $offlineUntil,
         ?string $expiresAt = null,
     ): void {
-        $offlineUntilDate = $offlineUntil
-            ? now()->parse($offlineUntil)
-            : now()->addDays($this->graceDays);
-
-        $offlineUntilStr = $offlineUntilDate->toIso8601String();
-
-        $this->cache->storeStatus($status, true, $offlineUntilStr);
+        $this->cache->storeStatus($status, true, $offlineUntil);
 
         $this->cache->storeToken([
             'license_key' => $licenseKey,
             'fingerprint' => $fingerprint,
             'status' => $status,
-            'product' => $product ?? $this->appName,
-            'expires_at' => $expiresAt ?? $offlineUntilDate->toDateString(),
-            'offline_until' => $offlineUntilStr,
-            'server_time' => $this->resolveServerTime($serverTime),
-            'features' => $features,
+            'product' => $this->appName,
+            'expires_at' => $expiresAt ?? now()->addDays($this->graceDays)->toDateString(),
+            'offline_until' => $offlineUntil,
+            'features' => [],
         ]);
 
         $this->resolvedStatus = null;
     }
 
-    private function resolveServerTime(?string $httpDate): string
+    private function calculateOfflineUntil(?string $expiresAt): string
     {
-        if ($httpDate === null) {
-            return now()->toIso8601String();
+        if ($expiresAt) {
+            return now()->parse($expiresAt)->addDays($this->graceDays)->toIso8601String();
         }
 
-        try {
-            return now()->parse($httpDate)->toIso8601String();
-        } catch (\Throwable) {
-            return now()->toIso8601String();
-        }
+        return now()->addDays($this->graceDays)->toIso8601String();
     }
 
     private function resolveLicenseKey(): string

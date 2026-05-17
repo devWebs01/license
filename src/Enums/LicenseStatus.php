@@ -11,7 +11,6 @@ enum LicenseStatus: string
     case GraceWarning = 'grace_warning';
     case Locked = 'locked';
     case NotActivated = 'not_activated';
-    case PendingApproval = 'pending_approval';
     case Unknown = 'unknown';
 
     public function isBlocking(): bool
@@ -19,7 +18,7 @@ enum LicenseStatus: string
         return match ($this) {
             self::Active, self::GraceWarning => false,
             self::Suspended, self::Expired, self::Revoked, self::Locked, self::NotActivated => true,
-            self::PendingApproval, self::Unknown => false,
+            self::Unknown => false,
         };
     }
 
@@ -33,7 +32,6 @@ enum LicenseStatus: string
             self::GraceWarning => 'Grace Warning',
             self::Locked => 'Locked',
             self::NotActivated => 'Not Activated',
-            self::PendingApproval => 'Pending Approval',
             self::Unknown => 'Unknown',
         };
     }

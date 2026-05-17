@@ -13,10 +13,6 @@ final class BladeDirectives
             return LicenseClient::isValid();
         });
 
-        Blade::if('feature', function (string $feature) {
-            return LicenseClient::hasFeature($feature);
-        });
-
         Blade::if('licenseWarning', function () {
             return session()->has('license_warning');
         });

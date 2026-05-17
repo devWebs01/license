@@ -20,71 +20,25 @@
         .error { color: #ef4444; font-size: 0.875rem; margin-top: 0.5rem; }
         button { width: 100%; padding: 0.75rem; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
         button:hover { background: #2563eb; }
-        .approval-box { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 1.5rem; text-align: center; margin: 1rem 0; }
-        .approval-box .code { font-size: 2rem; font-family: monospace; font-weight: 700; letter-spacing: 4px; color: #92400e; margin: 1rem 0; }
         .info-box { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; font-size: 0.875rem; color: #1e40af; }
-        .loading { display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
         .step { display: none; }
         .step.active { display: block; }
     </style>
 </head>
 <body>
     <div class="card">
-        @php $hasConfig = config('licensing-client.server_url') && config('licensing-client.api_key'); @endphp
+        @php $hasConfig = config('licensing-client.github_raw_base'); @endphp
 
         @if (!$hasConfig)
             <h1>Setup Lisensi</h1>
             <div class="info-box" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;">
                 <p><strong>Lisensi belum dikonfigurasi.</strong></p>
                 <p style="margin-top:0.5rem;">Tambahkan konfigurasi berikut di file <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">.env</code>:</p>
-                <pre style="background:#fffbeb;padding:0.75rem;border-radius:6px;margin-top:0.5rem;font-size:0.75rem;overflow-x:auto;">LICENSING_SERVER_URL=http://license-monitor.test
-LICENSING_API_KEY=your_api_key
-LICENSING_API_SECRET=your_api_secret</pre>
+                <pre style="background:#fffbeb;padding:0.75rem;border-radius:6px;margin-top:0.5rem;font-size:0.75rem;overflow-x:auto;">LICENSING_GITHUB_RAW=https://raw.githubusercontent.com/org/repo/main
+LICENSING_KEY=your-license-key</pre>
                 <p style="margin-top:0.75rem;">Atau jalankan <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">php artisan license:check</code> untuk diagnose.</p>
             </div>
             <p style="text-align:center;font-size:0.875rem;color:#6b7280;">Setelah dikonfigurasi, refresh halaman ini.</p>
-
-        @elseif (session('requires_approval'))
-            <h1>Menunggu Approval</h1>
-            <div class="approval-box">
-                <p>Kode Aktivasi Anda:</p>
-                <div class="code">{{ session('activation_code') }}</div>
-                <p style="font-size:0.875rem;">Berikan kode ini ke admin untuk di-approve.</p>
-            </div>
-            <p style="text-align:center;font-size:0.875rem;">Halaman ini akan auto-refresh setiap 30 detik.</p>
-            <script>setTimeout(function(){ location.reload(); }, 30000);</script>
-
-        @elseif (isset($requires_approval) && $requires_approval)
-            <h1>Menunggu Approval</h1>
-            <div class="approval-box">
-                <p>Kode Aktivasi Anda:</p>
-                <div class="code">{{ $activation_code }}</div>
-                <p style="font-size:0.875rem;">Berikan kode ini ke admin untuk di-approve.</p>
-            </div>
-            <div id="poll-status" style="text-align:center;font-size:0.875rem;color:#6b7280;">Memeriksa status aktivasi...</div>
-            <script>
-            (function() {
-                var pollUrl = '{{ route('licensing.poll') }}';
-                var check = function() {
-                    fetch(pollUrl)
-                        .then(function(r) { return r.json(); })
-                        .then(function(data) {
-                            if (data.approved) {
-                                document.getElementById('poll-status').innerText = 'Aktivasi disetujui! Mengarahkan...';
-                                window.location.href = '/';
-                            } else {
-                                setTimeout(check, 5000);
-                            }
-                        })
-                        .catch(function() {
-                            setTimeout(check, 10000);
-                        });
-                };
-                setTimeout(check, 3000);
-            })();
-            </script>
 
         @elseif(isset($status))
             <h1>Status Lisensi</h1>

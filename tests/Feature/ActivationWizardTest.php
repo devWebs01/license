@@ -18,13 +18,12 @@ class ActivationWizardTest extends TestCase
     public function test_activate_post_with_valid_key_succeeds(): void
     {
         Http::fake([
-            'monitor.test/api/v1/activate' => Http::response([
-                'success' => true,
-                'message' => 'Perangkat berhasil diaktifkan',
-                'data' => [
-                    'device_id' => 1,
-                    'offline_until' => now()->addDays(7)->toIso8601String(),
-                ],
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('TEST-ABCD-EFGH-1234'),
+                'status' => 'active',
+                'expires_at' => now()->addMonths(6)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
             ]),
         ]);
 
@@ -36,26 +35,17 @@ class ActivationWizardTest extends TestCase
         $response->assertSessionHas('success');
     }
 
-    public function test_activate_post_with_approval_mode(): void
+    public function test_activate_post_with_invalid_key_fails(): void
     {
         Http::fake([
-            'monitor.test/api/v1/activate' => Http::response([
-                'success' => true,
-                'message' => 'Kode aktivasi dibuat',
-                'data' => [
-                    'requires_approval' => true,
-                    'activation_code' => 'A7F3B2C1',
-                    'expires_at' => now()->addHours(24)->toIso8601String(),
-                ],
-            ]),
+            'raw.githubusercontent.com/*' => Http::response(null, 404),
         ]);
 
         $response = $this->post(route('licensing.activate'), [
-            'license_key' => 'TEST-ABCD-EFGH-1234',
+            'license_key' => 'INVALID-KEY',
         ]);
 
-        $response->assertOk();
-        $response->assertSee('Menunggu Approval');
+        $response->assertSessionHasErrors(['license_key']);
     }
 
     public function test_activate_post_with_empty_key_returns_error(): void
@@ -82,10 +72,22 @@ class ActivationWizardTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_retry_endpoint_works(): void
+    public function test_activate_post_with_suspended_key_fails(): void
     {
-        $response = $this->post(route('licensing.retry'));
+        Http::fake([
+            'raw.githubusercontent.com/*' => Http::response([
+                'license_hash' => sha1('SUSPENDED-KEY'),
+                'status' => 'suspended',
+                'expires_at' => now()->addMonths(6)->toDateString(),
+                'max_devices' => 3,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+        ]);
 
-        $response->assertRedirect();
+        $response = $this->post(route('licensing.activate'), [
+            'license_key' => 'SUSPENDED-KEY',
+        ]);
+
+        $response->assertSessionHasErrors(['license_key']);
     }
 }

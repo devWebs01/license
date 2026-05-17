@@ -28,27 +28,19 @@ final class LicenseCheckCommand extends Command
 
         $this->components->twoColumnDetail('<fg=yellow>Memeriksa Konfigurasi</>', '');
 
-        $serverUrl = config('licensing-client.server_url');
-        if ($serverUrl) {
-            $this->components->twoColumnDetail('Server URL', $serverUrl);
+        $githubRawBase = config('licensing-client.github_raw_base');
+        if ($githubRawBase) {
+            $this->components->twoColumnDetail('GitHub Raw Base URL', $githubRawBase);
         } else {
-            $this->components->twoColumnDetail('Server URL', '<fg=red>TIDAK DIKONFIGURASI</>');
+            $this->components->twoColumnDetail('GitHub Raw Base URL', '<fg=red>TIDAK DIKONFIGURASI</>');
             $passed = false;
         }
 
-        $apiKey = config('licensing-client.api_key');
-        if ($apiKey) {
-            $this->components->twoColumnDetail('API Key', substr($apiKey, 0, 8).'...');
+        $licenseKey = config('licensing-client.license_key');
+        if ($licenseKey) {
+            $this->components->twoColumnDetail('License Key', substr($licenseKey, 0, 8).'...');
         } else {
-            $this->components->twoColumnDetail('API Key', '<fg=red>TIDAK DIKONFIGURASI</>');
-            $passed = false;
-        }
-
-        $apiSecret = config('licensing-client.api_secret');
-        if ($apiSecret) {
-            $this->components->twoColumnDetail('API Secret', substr($apiSecret, 0, 4).'...');
-        } else {
-            $this->components->twoColumnDetail('API Secret', '<fg=red>TIDAK DIKONFIGURASI</>');
+            $this->components->twoColumnDetail('License Key', '<fg=red>TIDAK DIKONFIGURASI</>');
             $passed = false;
         }
 
@@ -56,22 +48,29 @@ final class LicenseCheckCommand extends Command
 
         $this->components->twoColumnDetail('', '');
 
-        $this->components->twoColumnDetail('<fg=yellow>Memeriksa Koneksi Server</>', '');
+        $this->components->twoColumnDetail('<fg=yellow>Memeriksa Koneksi GitHub</>', '');
 
-        try {
-            $response = Http::timeout(5)
-                ->get(rtrim($serverUrl, '/').'/api/v1/health');
+        if ($githubRawBase && $licenseKey) {
+            try {
+                $hash = sha1($licenseKey);
+                $url = rtrim($githubRawBase, '/')."/licenses/{$hash}.json";
+                $response = Http::timeout(10)->get($url);
 
-            if ($response->successful()) {
-                $this->components->twoColumnDetail('Server Health', '<fg=green>OK</>');
-            } else {
-                $this->components->twoColumnDetail('Server Health', '<fg=red>Gagal ('.$response->status().')</>');
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $status = $data['status'] ?? 'unknown';
+                    $this->components->twoColumnDetail('License Status', "<fg=green>{$status}</>");
+                } elseif ($response->status() === 404) {
+                    $this->components->twoColumnDetail('License File', '<fg=yellow>Tidak ditemukan (404)</>');
+                } else {
+                    $this->components->twoColumnDetail('GitHub Response', '<fg=red>Gagal ('.$response->status().')</>');
+                    $passed = false;
+                }
+            } catch (\Throwable $e) {
+                $this->components->twoColumnDetail('GitHub Connection', '<fg=red>Tidak dapat dijangkau</>');
+                $this->components->twoColumnDetail('Error', $e->getMessage());
                 $passed = false;
             }
-        } catch (\Throwable $e) {
-            $this->components->twoColumnDetail('Server Health', '<fg=red>Tidak dapat dijangkau</>');
-            $this->components->twoColumnDetail('Error', $e->getMessage());
-            $passed = false;
         }
 
         $this->components->twoColumnDetail('', '');
@@ -98,10 +97,8 @@ final class LicenseCheckCommand extends Command
 
         $this->components->twoColumnDetail('<fg=yellow>Memeriksa Perangkat</>', '');
         $fingerprint = $this->fingerprint->fingerprint();
-        $deviceData = $this->fingerprint->collectData();
         $this->components->twoColumnDetail('Fingerprint', $fingerprint);
-        $this->components->twoColumnDetail('Hostname', $deviceData['hostname']);
-        $this->components->twoColumnDetail('OS', $deviceData['os'].' '.$deviceData['kernel']);
+        $this->components->twoColumnDetail('Hostname', php_uname('n'));
 
         $this->line('');
 

@@ -10,13 +10,6 @@ if (! function_exists('license_is_valid')) {
     }
 }
 
-if (! function_exists('license_has_feature')) {
-    function license_has_feature(string $feature): bool
-    {
-        return LicenseClient::hasFeature($feature);
-    }
-}
-
 if (! function_exists('license_info')) {
     function license_info(): LicenseInfo
     {

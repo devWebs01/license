@@ -3,7 +3,6 @@
 namespace DevWebs01\LicensingClient\Commands;
 
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
-use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use DevWebs01\LicensingClient\Services\LicenseClientService;
 use Illuminate\Console\Command;
 
@@ -24,7 +23,6 @@ final class LicenseStatusCommand extends Command
     {
         $info = $this->licenseService->status();
         $fingerprint = $this->fingerprint->fingerprint();
-        $deviceData = $this->fingerprint->collectData();
 
         $this->components->twoColumnDetail('Status', $info->status->label());
         $this->components->twoColumnDetail('Product', $info->product ?? '-');
@@ -32,8 +30,7 @@ final class LicenseStatusCommand extends Command
         $this->components->twoColumnDetail('Expires At', $info->offlineUntil ?? '-');
         $this->components->twoColumnDetail('Offline Until', $info->offlineUntil ?? '-');
         $this->components->twoColumnDetail('Cache Age', $this->getCacheAge($info->cachedAt));
-        $this->components->twoColumnDetail('Device', "{$fingerprint} ({$deviceData['hostname']})");
-        $this->components->twoColumnDetail('Features', $this->getFeatureFlags());
+        $this->components->twoColumnDetail('Device', "{$fingerprint} ({$this->getHostname()})");
         $this->components->twoColumnDetail('Grace Days', (string) $info->graceDaysRemaining);
 
         return self::SUCCESS;
@@ -72,12 +69,12 @@ final class LicenseStatusCommand extends Command
         }
     }
 
-    private function getFeatureFlags(): string
+    private function getHostname(): string
     {
-        $token = app(LicenseCacheService::class)->retrieveToken();
-
-        $features = $token['features'] ?? [];
-
-        return empty($features) ? '-' : implode(', ', $features);
+        try {
+            return php_uname('n');
+        } catch (\Throwable) {
+            return '-';
+        }
     }
 }

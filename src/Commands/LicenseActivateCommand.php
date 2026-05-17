@@ -26,14 +26,6 @@ final class LicenseActivateCommand extends Command
         $result = $this->licenseService->activate($key);
 
         if ($result->success) {
-            if ($result->requiresApproval) {
-                $this->components->warn('Aktivasi memerlukan approval admin.');
-                $this->line("Kode aktivasi: {$result->activationCode}");
-                $this->line("Kadaluwarsa: {$result->offlineUntil}");
-
-                return self::SUCCESS;
-            }
-
             $this->components->info('Lisensi berhasil diaktivasi!');
             $this->line("Offline until: {$result->offlineUntil}");
 

@@ -36,12 +36,9 @@ final class LicensingClientServiceProvider extends ServiceProvider
             return new LicenseClientService(
                 cache: $this->app->make(LicenseCacheService::class),
                 fingerprint: $this->app->make(FingerprintCollector::class),
-                serverUrl: (string) config('licensing-client.server_url'),
-                apiKey: (string) config('licensing-client.api_key'),
-                apiSecret: (string) config('licensing-client.api_secret'),
+                githubRawBase: (string) config('licensing-client.github_raw_base'),
                 licenseKey: (string) config('licensing-client.license_key'),
                 appName: (string) config('licensing-client.app_name', 'App'),
-                timeout: (int) config('licensing-client.timeout', 10),
                 graceDays: (int) config('licensing-client.grace_days', 7),
             );
         });
