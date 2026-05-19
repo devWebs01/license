@@ -272,4 +272,28 @@ final class LicenseClientService
 
         return $token['license_key'] ?? $this->licenseKey;
     }
+
+    public function renderGracePeriodWarning(): string
+    {
+        $info = $this->status();
+
+        if (!$info->isWithinGracePeriod || $info->graceDaysRemaining > 3 || $info->graceDaysRemaining <= 0) {
+            return '';
+        }
+
+        $days = $info->graceDaysRemaining;
+        $message = "Sistem belum mendeteksi koneksi internet. Silakan hubungkan komputer ke internet untuk memperpanjang lisensi otomatis. Sisa waktu offline: <strong>{$days} hari</strong>.";
+
+        return <<<HTML
+        <div id="license-grace-warning" style="position: fixed; bottom: 0; left: 0; right: 0; background-color: #ef4444; color: white; padding: 16px; text-align: center; font-family: system-ui, -apple-system, sans-serif; font-size: 14px; z-index: 999999; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1); display: flex; justify-content: center; align-items: center; gap: 12px;">
+            <div>
+                <svg style="width: 20px; height: 20px; flex-shrink: 0;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+            <div>{$message}</div>
+            <button onclick="document.getElementById('license-grace-warning').style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; margin-left: 16px;">Tutup</button>
+        </div>
+        HTML;
+    }
 }
