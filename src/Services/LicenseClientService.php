@@ -179,6 +179,11 @@ final class LicenseClientService
         }
     }
 
+    public function isStatusCached(): bool
+    {
+        return $this->cache->hasStatus();
+    }
+
     public function deactivate(): bool
     {
         $this->cache->clearToken();

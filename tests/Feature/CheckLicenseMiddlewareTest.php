@@ -83,12 +83,23 @@ class CheckLicenseMiddlewareTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_development_bypass_allows_request(): void
+    public function test_development_bypass_allows_request_when_cached(): void
+    {
+        config(['licensing-client.environment' => 'local']);
+
+        $this->cacheService->storeStatus('active', true, now()->addDays(7)->toIso8601String());
+
+        $response = $this->get('/test-route');
+
+        $response->assertOk();
+    }
+
+    public function test_development_redirects_to_activate_when_not_cached(): void
     {
         config(['licensing-client.environment' => 'local']);
 
         $response = $this->get('/test-route');
 
-        $response->assertOk();
+        $response->assertRedirect(route('licensing.activate'));
     }
 }

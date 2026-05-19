@@ -43,4 +43,6 @@ return [
     'admin_contact' => env('LICENSING_ADMIN_CONTACT', 'admin@company.com'),
 
     'dev_bypass' => env('LICENSING_DEV_BYPASS', false),
+
+    'auto_apply' => env('LICENSING_AUTO_APPLY', true),
 ];

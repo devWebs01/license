@@ -18,11 +18,11 @@ class CheckLicenseMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($this->isDevelopmentBypass()) {
+        if ($this->isExcludedRoute($request)) {
             return $next($request);
         }
 
-        if ($this->isExcludedRoute($request)) {
+        if ($this->isDevelopmentBypass()) {
             return $next($request);
         }
 
@@ -73,6 +73,10 @@ class CheckLicenseMiddleware
 
         $env = config('licensing-client.environment', 'production');
 
-        return ! in_array($env, ['production', 'license'], true);
+        if (in_array($env, ['production', 'license'], true)) {
+            return false;
+        }
+
+        return $this->licenseService->isStatusCached();
     }
 }

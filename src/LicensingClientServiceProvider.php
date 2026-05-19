@@ -62,6 +62,10 @@ final class LicensingClientServiceProvider extends ServiceProvider
     private function registerMiddleware(): void
     {
         $this->app['router']->aliasMiddleware('license', CheckLicenseMiddleware::class);
+
+        if (config('licensing-client.auto_apply', true)) {
+            $this->app['router']->pushMiddlewareToGroup('web', CheckLicenseMiddleware::class);
+        }
     }
 
     private function registerCommands(): void

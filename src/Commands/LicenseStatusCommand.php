@@ -23,7 +23,7 @@ final class LicenseStatusCommand extends Command
 
     public function handle(): int
     {
-        $info = $this->licenseService->status();
+        $info = $this->licenseService->info();
         $fingerprint = $this->fingerprint->fingerprint();
 
         $this->components->twoColumnDetail('Status', $info->status->label());
@@ -63,9 +63,17 @@ final class LicenseStatusCommand extends Command
         }
 
         try {
-            $diff = now()->diffInHours($cachedAt);
+            $cached = now()->parse($cachedAt);
+            $isFuture = $cached->isFuture();
+            $diff = $cached->diffInHours(now());
 
-            return "{$diff} hours";
+            if ($diff < 0.01) {
+                return 'Just now';
+            }
+
+            $label = $isFuture ? 'ahead' : 'ago';
+
+            return number_format($diff, 2)." hours {$label}";
         } catch (\Throwable) {
             return '-';
         }

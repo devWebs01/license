@@ -30,17 +30,12 @@
         @php $hasConfig = config('licensing-client.github_raw_base'); @endphp
 
         @if (!$hasConfig)
-            <h1>Setup Lisensi</h1>
-            <div class="info-box" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;">
-                <p><strong>Lisensi belum dikonfigurasi.</strong></p>
-                <p style="margin-top:0.5rem;">Tambahkan konfigurasi berikut di file <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">.env</code>:</p>
-                <pre style="background:#fffbeb;padding:0.75rem;border-radius:6px;margin-top:0.5rem;font-size:0.75rem;overflow-x:auto;">LICENSING_GITHUB_RAW=https://raw.githubusercontent.com/org/repo/main
-LICENSING_KEY=your-license-key</pre>
-                <p style="margin-top:0.75rem;">Atau jalankan <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">php artisan license:check</code> untuk diagnose.</p>
+            <div class="info-box" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;margin-bottom:1rem;">
+                <p><strong>Perhatian:</strong> Lisensi belum dikonfigurasi. Tambahkan <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">LICENSING_GITHUB_RAW</code> di file <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">.env</code>. Jalankan <code style="background:#fef9c3;padding:0.125rem 0.375rem;border-radius:4px;font-size:0.75rem;">php artisan license:check</code> untuk diagnose.</p>
             </div>
-            <p style="text-align:center;font-size:0.875rem;color:#6b7280;">Setelah dikonfigurasi, refresh halaman ini.</p>
+        @endif
 
-        @elseif(isset($status))
+        @if(isset($status))
             <h1>Status Lisensi</h1>
             <div class="info-box">
                 <p><strong>Status:</strong> {{ $status->status->label() }}</p>
@@ -55,52 +50,32 @@ LICENSING_KEY=your-license-key</pre>
             <button onclick="window.location='/'">Kembali ke Dashboard</button>
 
         @else
-            <div id="step1" class="step active">
-                <h1>Selamat Datang</h1>
-                <p>Aplikasi ini memerlukan lisensi untuk dapat digunakan. Silakan mulai proses aktivasi.</p>
-                <button onclick="showStep(2)">Mulai Aktivasi</button>
-            </div>
+            <h1>Aktivasi Lisensi</h1>
+            <p>Masukkan license key yang Anda dapatkan dari admin untuk mengaktifkan aplikasi.</p>
 
-            <div id="step2" class="step">
-                <h1>Deteksi Perangkat</h1>
-                <p>Berikut adalah informasi perangkat Anda:</p>
-                <dl class="device-info">
-                    <dt>Hostname</dt>
-                    <dd>{{ php_uname('n') }}</dd>
-                    <dt>Sistem Operasi</dt>
-                    <dd>{{ php_uname('s') }} {{ php_uname('r') }}</dd>
-                    <dt>Fingerprint</dt>
-                    <dd style="font-family:monospace;font-size:0.75rem;">{{ app(\DevWebs01\LicensingClient\Services\FingerprintCollector::class)->fingerprint() }}</dd>
-                </dl>
-                <button onclick="showStep(3)">Lanjutkan</button>
-                <button onclick="showStep(1)" style="background:#6b7280;margin-top:0.5rem;">Kembali</button>
-            </div>
+            <dl class="device-info">
+                <dt>Hostname</dt>
+                <dd>{{ php_uname('n') }}</dd>
+                <dt>Sistem Operasi</dt>
+                <dd>{{ php_uname('s') }} {{ php_uname('r') }}</dd>
+                <dt>Fingerprint</dt>
+                <dd style="font-family:monospace;font-size:0.75rem;">{{ app(\DevWebs01\LicensingClient\Services\FingerprintCollector::class)->fingerprint() }}</dd>
+            </dl>
 
-            <div id="step3" class="step">
-                <h1>Masukkan Lisensi</h1>
-                <p>Masukkan license key yang Anda dapatkan dari admin.</p>
+            @if(isset($errors) && $errors->any())
+                <div class="error">{{ $errors->first('license_key') }}</div>
+            @endif
 
-                @if(isset($errors) && $errors->any())
-                    <div class="error">{{ $errors->first('license_key') }}</div>
-                @endif
-
-                <form method="POST" action="{{ route('licensing.activate') }}">
-                    @csrf
-                    <label for="license_key">License Key</label>
-                    <input type="text" id="license_key" name="license_key" placeholder="XXXX-XXXX-XXXX-XXXX" pattern="[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}" maxlength="19" autocomplete="off" required>
-                    <button type="submit">Aktivasi</button>
-                </form>
-                <button onclick="showStep(2)" style="background:#6b7280;margin-top:0.5rem;">Kembali</button>
-            </div>
+            <form method="POST" action="{{ route('licensing.activate') }}">
+                @csrf
+                <label for="license_key">License Key</label>
+                <input type="text" id="license_key" name="license_key" placeholder="XXXX-XXXX-XXXX-XXXX" pattern="[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}" maxlength="19" autocomplete="off" required>
+                <button type="submit">Aktivasi</button>
+            </form>
         @endif
     </div>
 
     <script>
-        function showStep(num) {
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            document.getElementById('step' + num).classList.add('active');
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             var input = document.getElementById('license_key');
             if (input) {

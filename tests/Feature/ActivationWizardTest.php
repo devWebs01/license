@@ -12,7 +12,9 @@ class ActivationWizardTest extends TestCase
         $response = $this->get(route('licensing.activate'));
 
         $response->assertOk();
-        $response->assertSee('Selamat Datang');
+        $response->assertSee('Aktivasi Lisensi');
+        $response->assertSee('license_key');
+        $response->assertSee('Fingerprint');
     }
 
     public function test_activate_post_with_valid_key_succeeds(): void
