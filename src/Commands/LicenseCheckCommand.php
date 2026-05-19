@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace DevWebs01\LicensingClient\Commands;
 
+use DevWebs01\LicensingClient\Exceptions\CorruptedTokenException;
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
 use DevWebs01\LicensingClient\Services\LicenseCacheService;
 use Illuminate\Console\Command;
@@ -81,13 +82,18 @@ final class LicenseCheckCommand extends Command
         $this->components->twoColumnDetail('Token Tersimpan', $hasToken ? '<fg=green>Ya</>' : '<fg=yellow>Tidak</>');
 
         if ($hasToken) {
-            $token = $this->cacheService->retrieveToken();
-            if ($token) {
-                $offlineUntil = $token['offline_until'] ?? null;
-                $cachedAt = $token['cached_at'] ?? null;
-                $this->components->twoColumnDetail('Offline Until', $offlineUntil ?? '-');
-                $this->components->twoColumnDetail('Cached At', $cachedAt ?? '-');
-            } else {
+            try {
+                $token = $this->cacheService->retrieveToken();
+                if ($token) {
+                    $offlineUntil = $token['offline_until'] ?? null;
+                    $cachedAt = $token['cached_at'] ?? null;
+                    $this->components->twoColumnDetail('Offline Until', $offlineUntil ?? '-');
+                    $this->components->twoColumnDetail('Cached At', $cachedAt ?? '-');
+                } else {
+                    $this->components->twoColumnDetail('Token Integrity', '<fg=red>Rusak</>');
+                    $passed = false;
+                }
+            } catch (CorruptedTokenException) {
                 $this->components->twoColumnDetail('Token Integrity', '<fg=red>Rusak</>');
                 $passed = false;
             }

@@ -46,7 +46,7 @@ php artisan license:check
 - License Monitor pushes JSON status files to GitHub
 - Client fetches from `https://raw.githubusercontent.com/.../licenses/{hash}.json`
 - Status is cached locally with offline grace period
-- No API server, no HMAC, no device fleet management
+- No API server, no device fleet management
 
 ## Testing
 
@@ -54,6 +54,4 @@ php artisan license:check
 vendor/bin/phpunit
 ```
 
-## Documentation
 
-See `docs/` in the project root for full architecture and integration guide.

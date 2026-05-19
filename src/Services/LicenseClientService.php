@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DevWebs01\LicensingClient\Services;
 
 use DevWebs01\LicensingClient\Enums\LicenseStatus;
+use DevWebs01\LicensingClient\Exceptions\CorruptedTokenException;
 use DevWebs01\LicensingClient\ValueObjects\ActivationResult;
 use DevWebs01\LicensingClient\ValueObjects\LicenseInfo;
 use DevWebs01\LicensingClient\ValueObjects\ValidationResult;
@@ -191,7 +192,11 @@ final class LicenseClientService
     {
         $info = $this->status();
 
-        $token = $this->cache->retrieveToken();
+        try {
+            $token = $this->cache->retrieveToken();
+        } catch (CorruptedTokenException) {
+            $token = null;
+        }
 
         if ($token !== null && $info->product === null) {
             return new LicenseInfo(
@@ -273,7 +278,11 @@ final class LicenseClientService
 
     private function resolveLicenseKey(): string
     {
-        $token = $this->cache->retrieveToken();
+        try {
+            $token = $this->cache->retrieveToken();
+        } catch (CorruptedTokenException) {
+            $token = null;
+        }
 
         return $token['license_key'] ?? $this->licenseKey;
     }

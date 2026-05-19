@@ -22,12 +22,4 @@ final class ActivateRequest extends FormRequest
             'license_key' => ['required', 'string', 'regex:/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/'],
         ];
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toDto(): array
-    {
-        return $this->validated();
-    }
 }
