@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DevWebs01\LicensingClient\Commands;
 
 use DevWebs01\LicensingClient\Services\FingerprintCollector;
 use DevWebs01\LicensingClient\Services\LicenseCacheService;
-use DevWebs01\LicensingClient\Services\LicenseClientService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -15,7 +16,6 @@ final class LicenseCheckCommand extends Command
     protected $description = 'Periksa konfigurasi dan konektivitas lisensi';
 
     public function __construct(
-        private readonly LicenseClientService $licenseService,
         private readonly LicenseCacheService $cacheService,
         private readonly FingerprintCollector $fingerprint,
     ) {

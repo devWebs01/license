@@ -5,6 +5,8 @@ return [
 
     'license_key' => env('LICENSING_KEY'),
 
+    'hmac_secret' => env('LICENSING_HMAC_SECRET'),
+
     'app_name' => env('LICENSING_APP_NAME', env('APP_NAME')),
 
     'environment' => env('LICENSING_ENV', env('APP_ENV')),

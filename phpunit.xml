@@ -16,6 +16,7 @@
     <php>
         <env name="APP_KEY" value="base64:testkey1234567890123456789012345678901234567890123="/>
         <env name="CACHE_DRIVER" value="array"/>
+        <env name="CACHE_STORE" value="array"/>
         <env name="LICENSING_SERVER_URL" value="https://monitor.test"/>
         <env name="LICENSING_ENV" value="production"/>
     </php>

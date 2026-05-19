@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DevWebs01\LicensingClient\Http\Middleware;
 
 use Closure;
@@ -55,7 +57,7 @@ class CheckLicenseMiddleware
         $excluded = config('licensing-client.excluded_routes', []);
 
         foreach ($excluded as $route) {
-            if ($request->is($route) || $request->routeIs($route)) {
+            if ($request->is($route)) {
                 return true;
             }
         }

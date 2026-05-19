@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DevWebs01\LicensingClient;
 
 use DevWebs01\LicensingClient\Facades\LicenseClient;

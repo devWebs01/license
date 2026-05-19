@@ -18,10 +18,11 @@ final class LicenseWizardController extends Controller
 
     public function showActivate(): View
     {
+        /** @phpstan-ignore argument.type */
         return view('licensing::activate');
     }
 
-    public function activate(ActivateRequest $request): RedirectResponse|View
+    public function activate(ActivateRequest $request): RedirectResponse
     {
         $result = $this->licenseService->activate($request->validated('license_key'));
 
@@ -34,6 +35,7 @@ final class LicenseWizardController extends Controller
 
     public function showStatus(): View
     {
+        /** @phpstan-ignore argument.type */
         return view('licensing::activate', [
             'status' => $this->licenseService->status(),
         ]);
@@ -41,6 +43,7 @@ final class LicenseWizardController extends Controller
 
     public function showLocked(): View
     {
+        /** @phpstan-ignore argument.type */
         return view('licensing::locked', [
             'reason' => request()->query('reason', 'unknown'),
         ]);

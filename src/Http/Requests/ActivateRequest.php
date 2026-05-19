@@ -19,7 +19,7 @@ final class ActivateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'license_key' => ['required', 'string'],
+            'license_key' => ['required', 'string', 'regex:/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/'],
         ];
     }
 

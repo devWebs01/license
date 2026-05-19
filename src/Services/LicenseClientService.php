@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DevWebs01\LicensingClient\Services;
 
 use DevWebs01\LicensingClient\Enums\LicenseStatus;
@@ -147,7 +149,7 @@ final class LicenseClientService
             $status = LicenseStatus::GraceWarning;
         }
 
-        if (! $withinGrace) {
+        if (! $withinGrace && ! in_array($status, [LicenseStatus::Suspended, LicenseStatus::Expired, LicenseStatus::Revoked, LicenseStatus::NotActivated], true)) {
             $status = LicenseStatus::Locked;
         }
 
@@ -212,6 +214,9 @@ final class LicenseClientService
         return $this->status()->isValid;
     }
 
+    /**
+     * @return array{status: string, data: array<string, mixed>|null}
+     */
     private function fetchFromGithub(string $licenseKey): array
     {
         $hash = sha1($licenseKey);
@@ -277,7 +282,7 @@ final class LicenseClientService
     {
         $info = $this->status();
 
-        if (!$info->isWithinGracePeriod || $info->graceDaysRemaining > 3 || $info->graceDaysRemaining <= 0) {
+        if (! $info->isWithinGracePeriod || $info->graceDaysRemaining > 3 || $info->graceDaysRemaining <= 0) {
             return '';
         }
 

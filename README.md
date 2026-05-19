@@ -1,13 +1,13 @@
 # Laravel Licensing Client
 
-**Package:** `devwebs01/laravel-licensing-client`  
+**Package:** `devwebs01/laravel-license-client`  
 **Version:** 1.0.0  
 **Architecture:** GitHub Raw JSON Sync — no API server required.
 
 ## Installation
 
 ```bash
-composer require devwebs01/laravel-licensing-client
+composer require devwebs01/laravel-license-client
 ```
 
 ## Configuration
@@ -17,6 +17,12 @@ LICENSING_GITHUB_RAW=https://raw.githubusercontent.com/owner/repo/main
 LICENSING_KEY=XXXX-XXXX-XXXX-XXXX
 LICENSING_GRACE_DAYS=7
 LICENSING_ADMIN_CONTACT=admin@company.com
+LICENSING_APP_NAME=MyApp
+LICENSING_CACHE_STORE=file
+LICENSING_CACHE_TTL=3600
+LICENSING_SYNC_INTERVAL=12
+LICENSING_DEV_BYPASS=false
+LICENSING_HMAC_SECRET=
 ```
 
 ## Commands

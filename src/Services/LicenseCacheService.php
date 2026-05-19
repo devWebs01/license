@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace DevWebs01\LicensingClient\Services;
 
 use DevWebs01\LicensingClient\Exceptions\CorruptedTokenException;
@@ -38,6 +40,9 @@ final class LicenseCacheService
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function retrieveStatus(): ?array
     {
         $data = Cache::store($this->cacheStore)->get(self::CACHE_KEY_STATUS);
@@ -81,6 +86,9 @@ final class LicenseCacheService
         Cache::store($this->cacheStore)->forget(self::CACHE_KEY_STATUS);
     }
 
+    /**
+     * @param  array<string, mixed>  $tokenData
+     */
     public function storeToken(array $tokenData): void
     {
         $tokenData['version'] = self::TOKEN_VERSION;
@@ -105,6 +113,9 @@ final class LicenseCacheService
         );
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function retrieveToken(): ?array
     {
         $encrypted = Cache::store($this->cacheStore)->get(self::CACHE_KEY_TOKEN);
@@ -162,16 +173,22 @@ final class LicenseCacheService
         }
     }
 
+    /**
+     * @param  array{valid: bool, status: string, offline_until: string, updated_at: string}  $data
+     */
     private function computeStatusHmac(array $data): string
     {
         $payload = ($data['valid'] ? '1' : '0')
-            .($data['status'] ?? '')
-            .($data['offline_until'] ?? '')
-            .($data['updated_at'] ?? '');
+            .$data['status']
+            .$data['offline_until']
+            .$data['updated_at'];
 
         return hash_hmac('sha256', $payload, $this->getHmacSecret());
     }
 
+    /**
+     * @param  array<string, mixed>  $tokenData
+     */
     private function computeHmac(array $tokenData): string
     {
         $payload = ($tokenData['license_key'] ?? '')
@@ -181,6 +198,9 @@ final class LicenseCacheService
         return hash_hmac('sha256', $payload, $this->getHmacSecret());
     }
 
+    /**
+     * @param  array<string, mixed>  $token
+     */
     private function verifyIntegrity(array $token): bool
     {
         $expectedHmac = $token['hmac'] ?? '';
