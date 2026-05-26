@@ -4,10 +4,10 @@
     "type": "library",
     "keywords": ["laravel", "license", "licensing", "validation", "activation", "device-fingerprinting"],
     "license": "MIT",
-    "homepage": "https://github.com/devWebs01/Laravel-Licensing-Client",
+    "homepage": "https://github.com/devWebs01/Licensing-Client",
     "support": {
-        "issues": "https://github.com/devWebs01/Laravel-Licensing-Client/issues",
-        "source": "https://github.com/devWebs01/Laravel-Licensing-Client"
+        "issues": "https://github.com/devWebs01/Licensing-Client/issues",
+        "source": "https://github.com/devWebs01/Licensing-Client"
     },
     "authors": [
         {
