@@ -1,4 +1,4 @@
-# Laravel Licensing Client
+# Licensing Client
 
 **Package:** `devwebs01/laravel-license-client`  
 **Version:** 1.1.0  
