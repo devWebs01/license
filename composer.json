@@ -54,7 +54,6 @@
         "sort-packages": true,
         "preferred-install": "dist"
     },
-    "minimum-stability": "stable",
     "scripts": {
         "test": "vendor/bin/phpunit",
         "test-coverage": "XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html coverage",
