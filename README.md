@@ -1,7 +1,7 @@
 # Laravel Licensing Client
 
 **Package:** `devwebs01/laravel-license-client`  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Architecture:** GitHub Raw JSON Sync — no API server required.
 
 ## Installation
@@ -25,6 +25,9 @@ LICENSING_DEV_BYPASS=false
 LICENSING_HMAC_SECRET=
 ```
 
+> **Note:** The server pushes `max_devices`, `features`, and `updated_at` fields to GitHub.  
+> The client enforces `max_devices` locally (shows `deviceLimitReached` flag) and exposes `features` for feature flag checks.
+
 ## Commands
 
 ```bash
@@ -43,10 +46,11 @@ php artisan license:check
 
 ## How It Works
 
-- License Monitor pushes JSON status files to GitHub
+- License Monitor pushes JSON status files to GitHub (includes `max_devices`, `features`, `expires_at`, `status`)
 - Client fetches from `https://raw.githubusercontent.com/.../licenses/{hash}.json`
-- Status is cached locally with offline grace period
-- No API server, no device fleet management
+- Status is cached locally with offline grace period and HMAC integrity check
+- Server sync runs on Artisan schedule; stale cache auto-refresh on critical operations
+- `license:status` displays all enriched fields; `license_info()` and `license_is_valid()` helpers available
 
 ## Testing
 
